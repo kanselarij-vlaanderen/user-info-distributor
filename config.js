@@ -1,5 +1,5 @@
 // Also see projects' config/authorization/config.ex file for more info
-const USER_INFO_GRAPH = 'http://mu.semte.ch/graphs/account-info';
+const USER_INFO_GRAPH = process.env.MU_APPLICATION_USER_INFO_GRAPH || 'http://mu.semte.ch/graphs/account-info';
 
 const WATCH_TYPES = [
   {
