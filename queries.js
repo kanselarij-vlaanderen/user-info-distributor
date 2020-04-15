@@ -22,6 +22,49 @@ WHERE {
   return parsedResults.length ? parsedResults[0].type : null;
 }
 
+async function destinationGraphOfSubject (subject, type, graph) {
+  const path = relationPathForType(type);
+  const queryString = `
+SELECT ?graph
+WHERE {
+    GRAPH ?graph {
+        ${sparqlEscapeUri(subject)} a ${sparqlEscapeUri(type)} .
+        ${sparqlEscapeUri(subject)} ${path} ?group.
+    }
+    VALUES (?group ?graph) {
+        ( ${GROUP_MAPPINGS.map(g => sparqlEscapeUri(g.group) + ' ' + sparqlEscapeUri(g.graph)).join(')\n            (')} )
+    }
+}`;
+  const result = await updateSudo(queryString);
+  return result;
+}
+
+async function deleteInGraph (deltas, graph) {
+  const queryString = `
+DELETE DATA {
+    GRAPH ${sparqlEscapeUri(graph)} {
+        ${deltas.map(d => sparqlEscapeUri(d.subject.value) + ' ' +
+            sparqlEscapeUri(d.predicate.value) + ' ' +
+            sparqlEscapeUri(d.object.value) + ' .').join('\n        ')}
+    }
+}`;
+  const result = await updateSudo(queryString);
+  return result;
+}
+
+async function insertInGraph (deltas, graph) {
+  const queryString = `
+INSERT DATA {
+    GRAPH ${sparqlEscapeUri(graph)} {
+        ${deltas.map(d => sparqlEscapeUri(d.subject.value) + ' ' +
+            sparqlEscapeUri(d.predicate.value) + ' ' +
+            sparqlEscapeUri(d.object.value) + ' .').join('\n        ')}
+    }
+}`;
+  const result = await updateSudo(queryString);
+  return result;
+}
+
 async function updateInDestinationGraph (subject, type, srcGraph) {
   const path = relationPathForType(type);
   const queryString = `
@@ -83,6 +126,9 @@ WHERE {
 
 module.exports = {
   subjectIsTypeInGraph,
+  destinationGraphOfSubject,
+  deleteInGraph,
+  insertInGraph,
   updateInDestinationGraph,
   redistribute
 };
