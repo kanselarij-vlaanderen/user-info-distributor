@@ -12,18 +12,6 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   const deletionDeltas = delta.deletionDeltas(req.body);
   console.debug(`Received deltas (${insertionDeltas.length + deletionDeltas.length} total)`);
 
-  // INSERTIONS (new user info)
-  const typeInsertionDeltas = delta.filterByType(insertionDeltas, WATCH_TYPES);
-  if (typeInsertionDeltas.length) {
-    console.log(`Received deltas for ${typeInsertionDeltas.length} INSERTED user info object(s)`);
-  }
-  for (const d of typeInsertionDeltas) {
-    const subject = d.subject.value;
-    const type = d.object.value;
-    console.log(`Inserting user info for <${subject}> (<${type}>) in destination graph ...`);
-    await queries.updateInDestinationGraph(subject, type, USER_INFO_GRAPH);
-  }
-
   // DELETIONS (removed user info)
   const typeDeletionDeltas = delta.filterByType(deletionDeltas, WATCH_TYPES);
   if (typeDeletionDeltas.length) {
@@ -33,7 +21,25 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     const subject = d.subject.value;
     const type = d.object.value;
     console.log(`Removing user info for <${subject}> (<${type}>) from destination graph ...`);
-    await queries.updateInDestinationGraph(subject, type, USER_INFO_GRAPH);
+    const graph = await queries.destinationGraphOfSubject(subject, type);
+    if (graph) {
+      await queries.deleteInGraph(delta.filterBySubject(deletionDeltas, [subject]), graph);
+    }
+  }
+
+  // INSERTIONS (new user info)
+  const typeInsertionDeltas = delta.filterByType(insertionDeltas, WATCH_TYPES);
+  if (typeInsertionDeltas.length) {
+    console.log(`Received deltas for ${typeInsertionDeltas.length} INSERTED user info object(s)`);
+  }
+  for (const d of typeInsertionDeltas) {
+    const subject = d.subject.value;
+    const type = d.object.value;
+    console.log(`Inserting user info for <${subject}> (<${type}>) in destination graph ...`);
+    const graph = await queries.destinationGraphOfSubject(subject, type);
+    if (graph) {
+      await queries.insertInGraph(delta.filterBySubject(insertionDeltas, [subject]), graph);
+    }
   }
 
   // UPDATES (modified user info)
