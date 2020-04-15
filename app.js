@@ -13,7 +13,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   console.debug(`Received deltas (${insertionDeltas.length + deletionDeltas.length} total)`);
 
   // INSERTIONS (new user info)
-  const typeInsertionDeltas = delta.filterTypeDeltas(insertionDeltas, WATCH_TYPES);
+  const typeInsertionDeltas = delta.filterByType(insertionDeltas, WATCH_TYPES);
   if (typeInsertionDeltas.length) {
     console.log(`Received deltas for ${typeInsertionDeltas.length} INSERTED user info object(s)`);
   }
@@ -25,7 +25,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   }
 
   // DELETIONS (removed user info)
-  const typeDeletionDeltas = delta.filterTypeDeltas(deletionDeltas, WATCH_TYPES);
+  const typeDeletionDeltas = delta.filterByType(deletionDeltas, WATCH_TYPES);
   if (typeDeletionDeltas.length) {
     console.log(`Received deltas for ${typeDeletionDeltas.length} DELETED user info object(s)`);
   }
@@ -42,10 +42,10 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
    * based on user-info related predicates in which we expect modifications. Note however that
    * updates to properties not included here, will not be picked up for user info distribution
    */
-  const updateDeltas = delta.filterPredicateDeltas([...insertionDeltas, ...deletionDeltas], UPDATEABLE_PREDICATES);
-  let updates = delta.uniqueDeltaSubjects(updateDeltas);
-  const inserts = delta.uniqueDeltaSubjects(typeInsertionDeltas);
-  const deletes = delta.uniqueDeltaSubjects(typeDeletionDeltas);
+  const updateDeltas = delta.filterByPredicate([...insertionDeltas, ...deletionDeltas], UPDATEABLE_PREDICATES);
+  let updates = delta.uniqueSubjects(updateDeltas);
+  const inserts = delta.uniqueSubjects(typeInsertionDeltas);
+  const deletes = delta.uniqueSubjects(typeDeletionDeltas);
   updates = updates.filter(e => !inserts.includes(e)).filter(e => !deletes.includes(e));
   if (updates.length) {
     console.log(`Received deltas for ${updates.length} potentially UPDATED user info object(s)`);
