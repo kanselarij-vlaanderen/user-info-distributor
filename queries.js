@@ -22,10 +22,10 @@ WHERE {
   return parsedResults.length ? parsedResults[0].type : null;
 }
 
-async function destinationGraphOfSubject (subject, type, graph) {
+async function destinationGraphOfSubject (subject, type) {
   const path = relationPathForType(type);
   const queryString = `
-SELECT ?graph
+SELECT DISTINCT ?graph
 WHERE {
     GRAPH ?graph {
         ${sparqlEscapeUri(subject)} a ${sparqlEscapeUri(type)} .
@@ -35,8 +35,9 @@ WHERE {
         ( ${GROUP_MAPPINGS.map(g => sparqlEscapeUri(g.group) + ' ' + sparqlEscapeUri(g.graph)).join(')\n            (')} )
     }
 }`;
-  const result = await updateSudo(queryString);
-  return result;
+  const result = await querySudo(queryString);
+  const parsedResults = parseSparqlResults(result);
+  return parsedResults.length ? parsedResults[0].graph : null;
 }
 
 async function deleteInGraph (deltas, graph) {
