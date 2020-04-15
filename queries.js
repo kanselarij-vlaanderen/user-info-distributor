@@ -66,39 +66,6 @@ INSERT DATA {
   return result;
 }
 
-async function updateInDestinationGraph (subject, type, srcGraph) {
-  const path = relationPathForType(type);
-  const queryString = `
-DELETE {
-    GRAPH ?dstGraph {
-        ${sparqlEscapeUri(subject)} ?oldP ?oldO .
-    }
-}
-INSERT {
-    GRAPH ?dstGraph {
-        ${sparqlEscapeUri(subject)} ?newP ?newO .
-    }
-}
-WHERE {
-    GRAPH ${sparqlEscapeUri(srcGraph)} {
-        ${sparqlEscapeUri(subject)} ?newP ?newO .
-        ${sparqlEscapeUri(subject)} ${path} ?group.
-        VALUES (?group ?dstGraph) {
-            ( ${GROUP_MAPPINGS.map(g => sparqlEscapeUri(g.group) + ' ' + sparqlEscapeUri(g.graph)).join(')\n            (')} )
-        }
-    }
-    GRAPH ?dstGraph {
-        OPTIONAL {
-          ${sparqlEscapeUri(subject)} ?oldP ?oldO .
-        }
-    }
-    FILTER ( !((?newP = ?oldP) && (?newO = ?oldO)) )
-}
-  `;
-  const result = await updateSudo(queryString);
-  return result;
-}
-
 // assumes destination graph to be empty (not to create conflicting data)
 async function redistribute (srcGraph, type) {
   const path = relationPathForType(type);
@@ -130,6 +97,5 @@ module.exports = {
   destinationGraphOfSubject,
   deleteInGraph,
   insertInGraph,
-  updateInDestinationGraph,
   redistribute
 };

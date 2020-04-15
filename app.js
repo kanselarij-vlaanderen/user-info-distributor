@@ -17,13 +17,16 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   if (typeDeletionDeltas.length) {
     console.log(`Received deltas for ${typeDeletionDeltas.length} DELETED user info object(s)`);
   }
+  let deletedDeltas = [];
   for (const d of typeDeletionDeltas) {
     const subject = d.subject.value;
     const type = d.object.value;
     console.log(`Removing user info for <${subject}> (<${type}>) from destination graph ...`);
     const graph = await queries.destinationGraphOfSubject(subject, type);
     if (graph) {
-      await queries.deleteInGraph(delta.filterBySubject(deletionDeltas, [subject]), graph);
+      const deletedDeltasforSubject = delta.filterBySubject(deletionDeltas, [subject]);
+      await queries.deleteInGraph(deletedDeltas, graph);
+      deletedDeltas = deletedDeltas.join(deletedDeltasforSubject);
     }
   }
 
@@ -32,13 +35,16 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   if (typeInsertionDeltas.length) {
     console.log(`Received deltas for ${typeInsertionDeltas.length} INSERTED user info object(s)`);
   }
+  let insertedDeltas = [];
   for (const d of typeInsertionDeltas) {
     const subject = d.subject.value;
     const type = d.object.value;
     console.log(`Inserting user info for <${subject}> (<${type}>) in destination graph ...`);
     const graph = await queries.destinationGraphOfSubject(subject, type);
     if (graph) {
-      await queries.insertInGraph(delta.filterBySubject(insertionDeltas, [subject]), graph);
+      const insertedDeltasforSubject = delta.filterBySubject(deletionDeltas, [subject]);
+      await queries.insertInGraph(insertedDeltas, graph);
+      insertedDeltas = insertedDeltas.join(insertedDeltasforSubject);
     }
   }
 
@@ -48,20 +54,25 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
    * based on user-info related predicates in which we expect modifications. Note however that
    * updates to properties not included here, will not be picked up for user info distribution
    */
-  const updateDeltas = delta.filterByPredicate([...insertionDeltas, ...deletionDeltas], UPDATEABLE_PREDICATES);
-  let updates = delta.uniqueSubjects(updateDeltas);
-  const inserts = delta.uniqueSubjects(typeInsertionDeltas);
-  const deletes = delta.uniqueSubjects(typeDeletionDeltas);
-  updates = updates.filter(e => !inserts.includes(e)).filter(e => !deletes.includes(e));
-  if (updates.length) {
-    console.log(`Received deltas for ${updates.length} potentially UPDATED user info object(s)`);
+  let updateDeltas = delta.filterByPredicate([...insertionDeltas, ...deletionDeltas], UPDATEABLE_PREDICATES);
+  // Filter out already processed subjects
+  updateDeltas = updateDeltas.filter(e => !(insertedDeltas.includes(e) || deletedDeltas.includes(e)));
+  const updateSubjects = delta.uniqueSubjects(updateDeltas);
+  if (updateSubjects.length) {
+    console.log(`Received deltas for ${updateSubjects.length} potentially UPDATED user info object(s)`);
   }
-  for (const s of updates) {
-    const type = await queries.subjectIsTypeInGraph(s, USER_INFO_GRAPH, WATCH_TYPES.map(t => t.type));
+  for (const subject of updateSubjects) {
+    const type = await queries.subjectIsTypeInGraph(subject, USER_INFO_GRAPH, WATCH_TYPES.map(t => t.type));
     if (type) {
-      console.log(`Updating user info for <${s}> (<${type}>) in destination graph ...`);
-      await queries.updateInDestinationGraph(s, type, USER_INFO_GRAPH);
+      const updatedDeltasforSubject = delta.filterBySubject(updateDeltas, [subject]);
+      const graph = await queries.destinationGraphOfSubject(subject, type);
+      if (graph) {
+        console.log(`Updating user info for <${subject}> (<${type}>) in destination graph ...`);
+        await queries.deleteInGraph(updatedDeltasforSubject, graph);
+        await queries.insertInGraph(updatedDeltasforSubject, graph);
+      }
     }
+    // TODO if object of to-watch predicate is a of a to-watch type
   }
 });
 
