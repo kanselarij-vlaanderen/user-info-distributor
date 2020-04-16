@@ -6,6 +6,13 @@ const WATCH_TYPES = [
     type: 'http://xmlns.com/foaf/0.1/Person',
     pathToGroup: [
       { uri: 'http://xmlns.com/foaf/0.1/member', inverse: true }
+    ],
+    predicates: [ // Doesn't contain all predicates. Just the ones we expect to get updated
+      { uri: 'http://xmlns.com/foaf/0.1/firstName', inverse: false },
+      { uri: 'http://xmlns.com/foaf/0.1/familyName', inverse: false },
+      { uri: 'http://xmlns.com/foaf/0.1/mbox', inverse: false },
+      { uri: 'http://xmlns.com/foaf/0.1/phone', inverse: false },
+      { uri: 'http://www.w3.org/ns/org#memberOf', inverse: true }
     ]
   },
   {
@@ -13,14 +20,16 @@ const WATCH_TYPES = [
     pathToGroup: [
       { uri: 'http://xmlns.com/foaf/0.1/account', inverse: true },
       { uri: 'http://xmlns.com/foaf/0.1/member', inverse: true }
-    ]
+    ],
+    predicates: []
   },
   {
     type: 'http://www.w3.org/ns/adms#Identifier',
     pathToGroup: [
       { uri: 'http://www.w3.org/ns/adms#identifier', inverse: true },
       { uri: 'http://xmlns.com/foaf/0.1/member', inverse: true }
-    ]
+    ],
+    predicates: []
   }
 ];
 
@@ -56,13 +65,7 @@ const GROUP_MAPPINGS = [
   }
 ];
 
-const UPDATEABLE_PREDICATES = [
-  'http://xmlns.com/foaf/0.1/firstName',
-  'http://xmlns.com/foaf/0.1/familyName',
-  'http://xmlns.com/foaf/0.1/mbox',
-  'http://xmlns.com/foaf/0.1/phone',
-  'http://www.w3.org/ns/org#memberOf'
-];
+const UPDATEABLE_PREDICATES = WATCH_TYPES.reduce((ps, t) => ps.concat(t.predicates.map(p => p.uri)));
 
 module.exports = {
   USER_INFO_GRAPH,

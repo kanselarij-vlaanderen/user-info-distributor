@@ -1,5 +1,6 @@
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { sparqlEscapeUri } from 'mu';
+import { groupBy } from 'lodash.array';
 
 import { parseSparqlResults, relationPathForType } from './lib/query-util';
 
@@ -40,30 +41,47 @@ WHERE {
   return parsedResults.length ? parsedResults[0].graph : null;
 }
 
-async function deleteInGraph (deltas, graph) {
-  const queryString = `
-DELETE DATA {
+async function graphStatementsFromQuads (quads, graph) {
+  const quadsByGraph = groupBy(quads, q => q[3]);
+  let graphStatements = '';
+  for (const [graph, triples] of quadsByGraph) {
+    graphStatements += `
     GRAPH ${sparqlEscapeUri(graph)} {
-        ${deltas.map(d => sparqlEscapeUri(d.subject.value) + ' ' +
-            sparqlEscapeUri(d.predicate.value) + ' ' +
-            sparqlEscapeUri(d.object.value) + ' .').join('\n        ')}
+        ${triples.map(t => sparqlEscapeUri(t[0]) + ' ' +
+            sparqlEscapeUri(t[1]) + ' ' +
+            sparqlEscapeUri(t[2]) + ' .').join('\n        ')}
     }
-}`;
-  const result = await updateSudo(queryString);
-  return result;
+`;
+  }
+  return graphStatements;
 }
 
-async function insertInGraph (deltas, graph) {
-  const queryString = `
-INSERT DATA {
-    GRAPH ${sparqlEscapeUri(graph)} {
-        ${deltas.map(d => sparqlEscapeUri(d.subject.value) + ' ' +
-            sparqlEscapeUri(d.predicate.value) + ' ' +
-            sparqlEscapeUri(d.object.value) + ' .').join('\n        ')}
-    }
+async function deleteQuads (quads) {
+  const graphStatements = graphStatementsFromQuads(quads);
+  if (graphStatements) {
+    const queryString = `
+DELETE DATA {
+    ${graphStatements}
 }`;
-  const result = await updateSudo(queryString);
-  return result;
+    const result = await updateSudo(queryString);
+    return result;
+  } else {
+    return null;
+  }
+}
+
+async function insertQuads (quads) {
+  const graphStatements = graphStatementsFromQuads(quads);
+  if (graphStatements) {
+    const queryString = `
+INSERT DATA {
+    ${graphStatements}
+}`;
+    const result = await updateSudo(queryString);
+    return result;
+  } else {
+    return null;
+  }
 }
 
 // assumes destination graph to be empty (not to create conflicting data)
@@ -95,7 +113,7 @@ WHERE {
 module.exports = {
   subjectIsTypeInGraph,
   destinationGraphOfSubject,
-  deleteInGraph,
-  insertInGraph,
+  deleteQuads,
+  insertQuads,
   redistribute
 };

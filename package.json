@@ -4,7 +4,8 @@
   "description": "Microservice to login using ACM/IDM with OpenId",
   "dependencies": {
     "@lblod/mu-auth-sudo": "^0.2.0",
-    "body-parser": "^1.19.0"
+    "body-parser": "^1.19.0",
+    "lodash": "^4.17.15"
   },
   "devDependencies": {},
   "scripts": {
