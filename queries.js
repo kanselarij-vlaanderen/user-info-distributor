@@ -1,6 +1,6 @@
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { sparqlEscapeUri } from 'mu';
-import { groupBy } from 'lodash.array';
+import { groupBy } from 'lodash/array';
 
 import { parseSparqlResults, relationPathForType } from './lib/query-util';
 
@@ -85,7 +85,7 @@ INSERT DATA {
 }
 
 // assumes destination graph to be empty (not to create conflicting data)
-async function redistribute (srcGraph, type) {
+async function redistribute (type, srcGraph) {
   const path = relationPathForType(type);
   const queryString = `
 INSERT {
