@@ -4,6 +4,22 @@ The [ACM-IDM login service](https://github.com/kanselarij-vlaanderen/acmidm-logi
 ## Configuration
 The graph to read from (the one the login service writes to) can be configured through `MU_APPLICATION_USER_INFO_GRAPH`. Most other configuration is hard-coded in `config.js`.
 
+Use following snippet in deltanotifier config:
+```js
+{
+  match: {},
+  callback: {
+    url: 'http://user-info-distribution/delta',
+    method: 'POST'
+  },
+  options: {
+    resourceFormat: 'v0.0.1',
+    gracePeriod: 250,
+    ignoreFromSelf: true
+  }
+}
+```
+
 ## Available requests
 
 #### POST /delta
