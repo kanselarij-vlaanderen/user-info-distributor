@@ -31,7 +31,14 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     const graph = await queries.destinationGraphOfSubject(subject, type, USER_INFO_GRAPH);
     if (graph) {
       const deletedDeltasforSubject = deltaUtil.filterBySubject(deletionDeltas, [subject]);
-      deleteQuads = deleteQuads.concat(deletedDeltasforSubject.map(d => [d.subject.value, d.predicate.value, d.subject.value, graph]));
+      deleteQuads = deleteQuads.concat(deletedDeltasforSubject.map(d => {
+        return {
+          subject: d.subject,
+          predicate: d.predicate,
+          object: d.object,
+          graph: { value: graph, type: 'uri' }
+        };
+      }));
       deletedDeltas = deletedDeltas.concat(deletedDeltasforSubject);
     }
   }
@@ -48,7 +55,14 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     const graph = await queries.destinationGraphOfSubject(subject, type, USER_INFO_GRAPH);
     if (graph) {
       const insertedDeltasforSubject = deltaUtil.filterBySubject(deletionDeltas, [subject]);
-      insertQuads = insertQuads.concat(insertedDeltasforSubject.map(d => [d.subject.value, d.predicate.value, d.subject.value, graph]));
+      insertQuads = insertQuads.concat(insertedDeltasforSubject.map(d => {
+        return {
+          subject: d.subject,
+          predicate: d.predicate,
+          object: d.object,
+          graph: { value: graph, type: 'uri' }
+        };
+      }));
       insertedDeltas = insertedDeltas.concat(insertedDeltasforSubject);
     }
   }
