@@ -41,7 +41,7 @@ WHERE {
   return parsedResults.length ? parsedResults[0].graph : null;
 }
 
-async function graphStatementsFromQuads (quads, graph) {
+function graphStatementsFromQuads (quads, graph) {
   const quadsByGraph = groupBy(quads, q => q[3]);
   let graphStatements = '';
   for (const [graph, triples] of Object.entries(quadsByGraph)) {
