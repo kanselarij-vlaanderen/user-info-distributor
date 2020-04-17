@@ -1,6 +1,6 @@
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { sparqlEscapeUri } from 'mu';
-import { groupBy } from 'lodash/array';
+import groupBy from 'lodash.groupby';
 
 import { parseSparqlResults, relationPathForType } from './lib/query-util';
 
@@ -44,7 +44,7 @@ WHERE {
 async function graphStatementsFromQuads (quads, graph) {
   const quadsByGraph = groupBy(quads, q => q[3]);
   let graphStatements = '';
-  for (const [graph, triples] of quadsByGraph) {
+  for (const [graph, triples] of Object.entries(quadsByGraph)) {
     graphStatements += `
     GRAPH ${sparqlEscapeUri(graph)} {
         ${triples.map(t => sparqlEscapeUri(t[0]) + ' ' +
