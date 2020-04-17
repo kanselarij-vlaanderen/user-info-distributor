@@ -54,7 +54,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     const type = d.object.value;
     const graph = await queries.destinationGraphOfSubject(subject, type, USER_INFO_GRAPH);
     if (graph) {
-      const insertedDeltasforSubject = deltaUtil.filterBySubject(deletionDeltas, [subject]);
+      const insertedDeltasforSubject = deltaUtil.filterBySubject(insertionDeltas, [subject]);
       insertQuads = insertQuads.concat(insertedDeltasforSubject.map(d => {
         return {
           subject: d.subject,
