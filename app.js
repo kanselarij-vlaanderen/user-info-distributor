@@ -17,8 +17,8 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     return; // Empty delta message received on startup?
   }
 
-  const deleteQuads = [];
-  const insertQuads = [];
+  let deleteQuads = [];
+  let insertQuads = [];
   // DELETIONS (removed user info)
   const typeDeletionDeltas = deltaUtil.filterByType(deletionDeltas, WATCH_TYPES);
   if (typeDeletionDeltas.length) {
@@ -31,7 +31,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     const graph = await queries.destinationGraphOfSubject(subject, type);
     if (graph) {
       const deletedDeltasforSubject = deltaUtil.filterBySubject(deletionDeltas, [subject]);
-      deleteQuads.push(deletedDeltasforSubject.map(d => [d.subject.value, d.predicate.value, d.subject.value, graph]));
+      deleteQuads = deleteQuads.concat(deletedDeltasforSubject.map(d => [d.subject.value, d.predicate.value, d.subject.value, graph]));
       deletedDeltas = deletedDeltas.concat(deletedDeltasforSubject);
     }
   }
@@ -48,7 +48,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     const graph = await queries.destinationGraphOfSubject(subject, type);
     if (graph) {
       const insertedDeltasforSubject = deltaUtil.filterBySubject(deletionDeltas, [subject]);
-      insertQuads.push(insertedDeltasforSubject.map(d => [d.subject.value, d.predicate.value, d.subject.value, graph]));
+      insertQuads = insertQuads.concat(insertedDeltasforSubject.map(d => [d.subject.value, d.predicate.value, d.subject.value, graph]));
       insertedDeltas = insertedDeltas.concat(insertedDeltasforSubject);
     }
   }
@@ -63,12 +63,12 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   const deleteUpdates = deltaUtil.filterByPredicate(deletionDeltas.filter(e => !deletedDeltas.includes(e)), UPDATEABLE_PREDICATES);
   if (deleteUpdates.length) {
     console.log(`Received deltas for ${deleteUpdates.length} UPDATED (deletes) *possible* user info propertie(s)`);
-    deleteQuads.push(await updateQuadsFromDeltas(deleteUpdates));
+    deleteQuads = deleteQuads.concat(await updateQuadsFromDeltas(deleteUpdates));
   }
   const insertUpdates = deltaUtil.filterByPredicate(insertionDeltas.filter(e => !insertedDeltas.includes(e)), UPDATEABLE_PREDICATES);
   if (insertUpdates.length) {
     console.log(`Received deltas for ${insertUpdates.length} UPDATED (inserts) *possible* user info propertie(s)`);
-    insertQuads.push(await updateQuadsFromDeltas(insertUpdates));
+    insertQuads = insertQuads.concat(await updateQuadsFromDeltas(insertUpdates));
   }
 
   // Commit changes that resulted from this delta set
