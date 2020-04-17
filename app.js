@@ -60,12 +60,12 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
    * updates to properties not included here, will not be picked up for user info distribution
    */
   // Filter for deltas with watched predicates only, Filter out already processed subjects
-  const deleteUpdates = deltaUtil.filterByPredicate(deletionDeltas.filter(e => !deletedDeltas.includes(e)), UPDATEABLE_PREDICATES.map(p => p.uri));
+  const deleteUpdates = deltaUtil.filterByPredicate(deletionDeltas.filter(e => !deletedDeltas.includes(e)), UPDATEABLE_PREDICATES);
   if (deleteUpdates.length) {
     console.log(`Received deltas for ${deleteUpdates.length} UPDATED (deletes) *possible* user info propertie(s)`);
     deleteQuads.push(await updateQuadsFromDeltas(deleteUpdates));
   }
-  const insertUpdates = deltaUtil.filterByPredicate(insertionDeltas.filter(e => !insertedDeltas.includes(e)), UPDATEABLE_PREDICATES.map(p => p.uri));
+  const insertUpdates = deltaUtil.filterByPredicate(insertionDeltas.filter(e => !insertedDeltas.includes(e)), UPDATEABLE_PREDICATES);
   if (insertUpdates.length) {
     console.log(`Received deltas for ${insertUpdates.length} UPDATED (inserts) *possible* user info propertie(s)`);
     insertQuads.push(await updateQuadsFromDeltas(insertUpdates));
