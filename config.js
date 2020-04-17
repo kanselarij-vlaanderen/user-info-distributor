@@ -12,7 +12,8 @@ const WATCH_TYPES = [
       { uri: 'http://xmlns.com/foaf/0.1/familyName', inverse: false },
       { uri: 'http://xmlns.com/foaf/0.1/mbox', inverse: false },
       { uri: 'http://xmlns.com/foaf/0.1/phone', inverse: false },
-      { uri: 'http://www.w3.org/ns/org#memberOf', inverse: true }
+      { uri: 'http://www.w3.org/ns/org#memberOf', inverse: false },
+      { uri: 'http://xmlns.com/foaf/0.1/member', inverse: true }
     ]
   },
   {
