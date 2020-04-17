@@ -23,12 +23,12 @@ WHERE {
   return parsedResults.length ? parsedResults[0].type : null;
 }
 
-async function destinationGraphOfSubject (subject, type) {
+async function destinationGraphOfSubject (subject, type, srcGraph) {
   const path = relationPathForType(type);
   const queryString = `
 SELECT DISTINCT ?graph
 WHERE {
-    GRAPH ?graph {
+    GRAPH ${sparqlEscapeUri(srcGraph)} {
         ${sparqlEscapeUri(subject)} a ${sparqlEscapeUri(type)} .
         ${sparqlEscapeUri(subject)} ${path} ?group.
     }
