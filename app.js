@@ -11,7 +11,11 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   res.status(202).end();
   const insertionDeltas = deltaUtil.insertionDeltas(req.body);
   const deletionDeltas = deltaUtil.deletionDeltas(req.body);
-  console.debug(`Received deltas (${insertionDeltas.length + deletionDeltas.length} total)`);
+  if (insertionDeltas.length || deletionDeltas.length) {
+    console.debug(`Received deltas (${insertionDeltas.length + deletionDeltas.length} total)`);
+  } else {
+    return; // Empty delta message received on startup?
+  }
 
   const deleteQuads = [];
   const insertQuads = [];
@@ -59,17 +63,21 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   const deleteUpdates = deltaUtil.filterByPredicate(deletionDeltas.filter(e => !deletedDeltas.includes(e)), UPDATEABLE_PREDICATES.map(p => p.uri));
   if (deleteUpdates.length) {
     console.log(`Received deltas for ${deleteUpdates.length} UPDATED (deletes) *possible* user info propertie(s)`);
+    deleteQuads.push(await updateQuadsFromDeltas(deleteUpdates));
   }
-  deleteQuads.push(await updateQuadsFromDeltas(deleteUpdates));
   const insertUpdates = deltaUtil.filterByPredicate(insertionDeltas.filter(e => !insertedDeltas.includes(e)), UPDATEABLE_PREDICATES.map(p => p.uri));
   if (insertUpdates.length) {
     console.log(`Received deltas for ${insertUpdates.length} UPDATED (inserts) *possible* user info propertie(s)`);
+    insertQuads.push(await updateQuadsFromDeltas(insertUpdates));
   }
-  insertQuads.push(await updateQuadsFromDeltas(insertUpdates));
 
   // Commit changes that resulted from this delta set
-  await queries.deleteQuads(deleteQuads);
-  await queries.insertQuads(insertQuads);
+  if (deleteQuads.length) {
+    await queries.deleteQuads(deleteQuads);
+  }
+  if (insertQuads.length) {
+    await queries.insertQuads(insertQuads);
+  }
 });
 
 /*
