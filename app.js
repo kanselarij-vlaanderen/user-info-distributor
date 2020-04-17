@@ -20,7 +20,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   let deleteQuads = [];
   let insertQuads = [];
   // DELETIONS (removed user info)
-  const typeDeletionDeltas = deltaUtil.filterByType(deletionDeltas, WATCH_TYPES);
+  const typeDeletionDeltas = deltaUtil.filterByType(deletionDeltas, WATCH_TYPES.map(t => t.type));
   if (typeDeletionDeltas.length) {
     console.log(`Received deltas for ${typeDeletionDeltas.length} DELETED user info object(s)`);
   }
@@ -44,7 +44,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   }
 
   // INSERTIONS (new user info)
-  const typeInsertionDeltas = deltaUtil.filterByType(insertionDeltas, WATCH_TYPES);
+  const typeInsertionDeltas = deltaUtil.filterByType(insertionDeltas, WATCH_TYPES.map(t => t.type));
   if (typeInsertionDeltas.length) {
     console.log(`Received deltas for ${typeInsertionDeltas.length} INSERTED user info object(s)`);
   }
