@@ -13,7 +13,8 @@ const WATCH_TYPES = [
       { uri: 'http://xmlns.com/foaf/0.1/mbox', inverse: false },
       { uri: 'http://xmlns.com/foaf/0.1/phone', inverse: false },
       { uri: 'http://www.w3.org/ns/org#memberOf', inverse: false },
-      { uri: 'http://xmlns.com/foaf/0.1/member', inverse: true }
+      { uri: 'http://xmlns.com/foaf/0.1/member', inverse: true },
+      { uri: 'http://xmlns.com/foaf/0.1/account', inverse: false } // No real "updates", but login-service doesn't insert user and account in one transaction
     ]
   },
   {
