@@ -63,6 +63,10 @@ const GROUP_MAPPINGS = [
   {
     group: 'http://data.kanselarij.vlaanderen.be/id/group/parlement',
     graph: 'http://mu.semte.ch/graphs/organizations/parlement'
+  },
+  {
+    group: 'http://data.kanselarij.vlaanderen.be/id/group/user',
+    graph: 'http://mu.semte.ch/graphs/rightless-user'
   }
 ];
 
