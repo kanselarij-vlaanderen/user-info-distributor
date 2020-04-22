@@ -2,7 +2,7 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { sparqlEscape, sparqlEscapeUri } from 'mu';
 import groupBy from 'lodash.groupby';
 
-import { parseSparqlResults, relationPathForType } from './lib/query-util';
+import { parseSparqlResults, constructRelationPath, relationPathForType } from './lib/query-util';
 
 import { GROUP_MAPPINGS } from './config';
 
@@ -85,6 +85,70 @@ INSERT DATA {
 }
 
 // assumes destination graph to be empty (not to create conflicting data)
+async function move (changedTriple, pathIsInverse, prePathSection, postPathSection, type, srcGraph) {
+  const sectionSubject = pathIsInverse ? sparqlEscapeUri(changedTriple.object.value) : sparqlEscapeUri(changedTriple.subject.value);
+  const sectionObject = pathIsInverse ? sparqlEscapeUri(changedTriple.subject.value) : sparqlEscapeUri(changedTriple.object.value);
+
+  let pathSubject; // Subject of the path section that changed
+  let prePathQuerySnippet;
+  if (prePathSection.length) { // set prePathQuerySnippet
+    pathSubject = '?newS';
+    prePathQuerySnippet = `${pathSubject} ${constructRelationPath(prePathSection)} ${sectionSubject} .`;
+  } else {
+    pathSubject = sectionSubject;
+  }
+
+  const changedPathSection = { uri: changedTriple.predicate.value, inverse: pathIsInverse };
+  const sectionPredicate = constructRelationPath([changedPathSection]); // Predicate-like statement
+
+  let pathObject;
+  let postPathQuerySnippet;
+
+  if (postPathSection.length) {
+    pathObject = '?group';
+    postPathQuerySnippet = `${sectionObject} ${constructRelationPath(postPathSection)} ${pathObject} .`;
+  } else {
+    pathObject = sectionObject;
+  }
+
+  const queryString = `
+DELETE {
+    GRAPH ?graphs {
+        ${pathSubject} ?newP ?newO .
+        ?newIO ?newIP ${pathSubject} .
+    }
+}
+INSERT {
+    GRAPH ?dstGraph {
+        ${pathSubject} ?newP ?newO .
+        ?newIO ?newIP ${pathSubject} .
+    }
+}
+WHERE {
+    GRAPH ${sparqlEscapeUri(srcGraph)} {
+        ${pathSubject} a ${sparqlEscapeUri(type)} ;
+            ?newP ?newO .
+        ?newIO ?newIP ${pathSubject} .
+        
+        ${prePathQuerySnippet || ''}
+        ${sectionSubject} ${sectionPredicate} ${sectionObject} .
+        ${postPathQuerySnippet || ''}
+
+        ${pathObject !== '?group' ? `BIND( ${pathObject} AS ?group )` : ''}
+        VALUES (?group ?dstGraph) {
+            ( ${GROUP_MAPPINGS.map(g => sparqlEscapeUri(g.group) + ' ' + sparqlEscapeUri(g.graph)).join(')\n            (')} )
+        }
+    }
+    VALUES ?graphs {
+        ${GROUP_MAPPINGS.map(m => sparqlEscapeUri(m.graph)).join('\n        ')}
+    }
+}
+  `;
+  const result = await updateSudo(queryString);
+  return result;
+}
+
+// assumes destination graph to be empty (not to create conflicting data)
 async function redistribute (type, srcGraph) {
   const path = relationPathForType(type);
   const queryString = `
@@ -115,5 +179,6 @@ module.exports = {
   destinationGraphOfSubject,
   deleteQuads,
   insertQuads,
+  move,
   redistribute
 };

@@ -73,9 +73,12 @@ const GROUP_MAPPINGS = [
 
 const UPDATEABLE_PREDICATES = WATCH_TYPES.map(t => t.predicates).reduce((ps, t) => ps.concat(t)).map(p => p.uri);
 
+const PATH_PREDICATES = WATCH_TYPES.map(t => t.pathToGroup).reduce((ps, t) => ps.concat(t)).map(p => p.uri);
+
 module.exports = {
   USER_INFO_GRAPH,
   WATCH_TYPES,
   GROUP_MAPPINGS,
-  UPDATEABLE_PREDICATES
+  UPDATEABLE_PREDICATES,
+  PATH_PREDICATES
 };

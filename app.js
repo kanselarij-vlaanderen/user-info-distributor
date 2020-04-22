@@ -5,7 +5,7 @@ import * as deltaUtil from './lib/delta-util';
 import * as queries from './queries';
 import { updateQuadsFromDeltas } from './lib/delta';
 
-import { USER_INFO_GRAPH, WATCH_TYPES, UPDATEABLE_PREDICATES } from './config';
+import { USER_INFO_GRAPH, WATCH_TYPES, UPDATEABLE_PREDICATES, PATH_PREDICATES } from './config';
 
 app.post('/delta', bodyParser.json(), async (req, res) => {
   res.status(202).end();
@@ -67,7 +67,7 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     }
   }
 
-  // UPDATES (modified user info)
+  // UPDATES to properties (properties need updating)
   /*
    * NOTE: To avoid triggering queries for resource type on each received delta, we filter deltas
    * based on user-info related predicates in which we expect modifications. Note however that
@@ -91,6 +91,18 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   }
   if (insertQuads.length) {
     await queries.insertQuads(insertQuads);
+  }
+
+  // UPDATES in group path (entities need graph-moving)
+  let pathUpdates = deltaUtil.filterByPredicate(deletionDeltas, PATH_PREDICATES);
+  pathUpdates = pathUpdates.concat(deltaUtil.filterByPredicate(insertionDeltas, PATH_PREDICATES));
+  for (const d of pathUpdates) {
+    const type = WATCH_TYPES.find(t => t.pathToGroup.find(p => p.uri === d.predicate.value));
+    const changedPathSection = type.pathToGroup.find(p => p.uri === d.predicate.value);
+    const index = type.pathToGroup.indexOf(changedPathSection);
+    const prePathSection = type.pathToGroup.slice(0, index);
+    const postPathSection = type.pathToGroup.slice(index + 1);
+    await queries.move(d, changedPathSection.inverse, prePathSection, postPathSection, type.type, USER_INFO_GRAPH);
   }
 });
 
