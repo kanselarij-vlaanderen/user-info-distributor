@@ -84,7 +84,6 @@ INSERT DATA {
   }
 }
 
-// assumes destination graph to be empty (not to create conflicting data)
 async function move (changedTriple, pathIsInverse, prePathSection, postPathSection, type, srcGraph) {
   const sectionSubject = pathIsInverse ? sparqlEscapeUri(changedTriple.object.value) : sparqlEscapeUri(changedTriple.subject.value);
   const sectionObject = pathIsInverse ? sparqlEscapeUri(changedTriple.subject.value) : sparqlEscapeUri(changedTriple.object.value);
