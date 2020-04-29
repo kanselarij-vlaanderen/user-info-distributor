@@ -117,6 +117,17 @@ DELETE {
         ?newIO ?newIP ${pathSubject} .
     }
 }
+WHERE {
+    GRAPH ?graphs {
+        ${pathSubject} a ${sparqlEscapeUri(type)} ;
+            ?newP ?newO .
+        OPTIONAL { ?newIO ?newIP ${pathSubject} . }
+    }
+    VALUES ?graphs {
+        ${GROUP_MAPPINGS.map(m => sparqlEscapeUri(m.graph)).join('\n        ')}
+    }
+}
+;
 INSERT {
     GRAPH ?dstGraph {
         ${pathSubject} ?newP ?newO .
@@ -137,9 +148,6 @@ WHERE {
         VALUES (?group ?dstGraph) {
             ( ${GROUP_MAPPINGS.map(g => sparqlEscapeUri(g.group) + ' ' + sparqlEscapeUri(g.graph)).join(')\n            (')} )
         }
-    }
-    VALUES ?graphs {
-        ${GROUP_MAPPINGS.map(m => sparqlEscapeUri(m.graph)).join('\n        ')}
     }
 }
   `;
