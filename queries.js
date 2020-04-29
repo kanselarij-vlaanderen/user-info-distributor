@@ -127,7 +127,7 @@ WHERE {
     GRAPH ${sparqlEscapeUri(srcGraph)} {
         ${pathSubject} a ${sparqlEscapeUri(type)} ;
             ?newP ?newO .
-        ?newIO ?newIP ${pathSubject} .
+        OPTIONAL { ?newIO ?newIP ${pathSubject} . }
         
         ${prePathQuerySnippet || ''}
         ${sectionSubject} ${sectionPredicate} ${sectionObject} .
