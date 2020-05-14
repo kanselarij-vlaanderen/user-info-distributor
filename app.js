@@ -96,6 +96,9 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   // UPDATES in group path (entities need graph-moving)
   let pathUpdates = deltaUtil.filterByPredicate(deletionDeltas, PATH_PREDICATES);
   pathUpdates = pathUpdates.concat(deltaUtil.filterByPredicate(insertionDeltas, PATH_PREDICATES));
+  if (pathUpdates.length) {
+    console.log(`Received deltas for ${pathUpdates.length} updates in the user info group-relation path.`);
+  }
   for (const d of pathUpdates) {
     const type = WATCH_TYPES.find(t => t.pathToGroup.find(p => p.uri === d.predicate.value));
     const changedPathSection = type.pathToGroup.find(p => p.uri === d.predicate.value);
